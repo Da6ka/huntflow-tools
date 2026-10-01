@@ -1,6 +1,6 @@
 # huntflow-tools
 
-[![CI](https://github.com/Da6ka/huntflow-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/Da6ka/huntflow-tools/actions/workflows/ci.yml) [![Release](https://img.shields.io/badge/release-v1.7.2-blue)](https://github.com/Da6ka/huntflow-tools/releases/latest)
+[![CI](https://github.com/Da6ka/huntflow-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/Da6ka/huntflow-tools/actions/workflows/ci.yml) [![Release](https://img.shields.io/badge/release-v1.7.3-blue)](https://github.com/Da6ka/huntflow-tools/releases/latest)
 
 Run your [Huntflow](https://huntflow.ru) recruiting day from the terminal instead of clicking through the web app. Pull up a vacancy's pipeline, check where a candidate stands, move someone forward or reject them with a reason, add a candidate straight from their CV. Type the commands yourself, or ask Claude to do it for you in plain language.
 

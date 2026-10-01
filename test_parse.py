@@ -45,6 +45,14 @@ class FirstPhoneTest(unittest.TestCase):
         # "2024 - 2024" is 8 digits — below the 9-digit floor.
         self.assertIsNone(A.first_phone('Worked 2024 - 2024 at X'))
 
+    def test_date_range_excluded(self):
+        # 12+ digits, but two year groups: a date range, not a phone.
+        self.assertIsNone(A.first_phone('Backend Engineer 2019-04 - 2021-06'))
+        self.assertIsNone(A.first_phone('2021-03-15 2023-01-01'))
+
+    def test_phone_with_one_year_like_group(self):
+        self.assertEqual(A.first_phone('Tel: +1 555 2012 345'), '+1 555 2012 345')
+
     def test_international(self):
         self.assertEqual(A.first_phone('Tel: +57 311 442 0266'), '+57 311 442 0266')
 

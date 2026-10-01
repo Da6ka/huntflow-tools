@@ -8,7 +8,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { parseAddOpts, parseCommentOpts, formatVacancy, formatApplicant, formatPipelineApplicant, parseSearchOpts, formatCoworker, num } = require('./huntflow.js');
+const { parseAddOpts, parseCommentOpts, formatVacancy, formatApplicant, formatPipelineApplicant, parseSearchOpts, formatCoworker, num, splitArgs } = require('./huntflow.js');
 
 test('parseAddOpts: two positionals become first/last', () => {
   const o = parseAddOpts(['Jane', 'Doe']);
@@ -122,4 +122,13 @@ test('num: digits pass, anything that could change a URL path throws', () => {
   for (const bad of ['1/../x', '1?x=2', 'abc', '', '-1', '1 2', '1\n']) {
     assert.throws(() => num(bad), /Invalid id/, JSON.stringify(bad));
   }
+});
+
+test('splitArgs: known flags are stripped, text after -- is kept literally', () => {
+  const a = splitArgs(['comment', '5', '--', 'note', 'about', '--json', 'output']);
+  assert.deepStrictEqual(a.filteredArgs, ['comment', '5', 'note', 'about', '--json', 'output']);
+  assert.strictEqual(a.jsonMode, false);
+  const b = splitArgs(['vacancies', '--open', '--json']);
+  assert.deepStrictEqual(b.filteredArgs, ['vacancies']);
+  assert.strictEqual(b.jsonMode, true);
 });

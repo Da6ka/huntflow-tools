@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.7.3 — 2026-10-02
+
+Fixes from a code review. No new commands.
+
+### Fixed
+
+- **`add_applicant.py`**: a date range such as `2019-04 - 2021-06` is no longer read as a phone number when the CV parser finds none. A step-5 failure on a record with no resume entry now stops with a clear message instead of a traceback.
+- **`huntflow.js add`**: warns when `--linkedin`, `--github`, `--location` or `--email2` are skipped because the account has no questionary field with that English title, instead of dropping them silently. If a step after the applicant is created fails, it prints the new applicant id and says the record is half set up, so a re-run does not create a duplicate.
+- **`huntflow.js`**: warns when refreshed tokens could not be saved to Keychain or the token file.
+- **`huntflow.js`**: text after a bare `--` is literal, so `comment 5 -- "note about --json"` keeps the flag word in the comment and does not switch to JSON output. Without `--`, behaviour is unchanged.
+- **CI**: the CHANGELOG gate now also watches `add_resume.js`.
+
 ## v1.7.2 — 2026-10-02
 
 Tagged release.
