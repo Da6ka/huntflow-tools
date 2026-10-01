@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Syntax-check the JavaScript tools
+        run: |
+          node --check huntflow.js
+          node --check reorder_stages.js
+      - name: Compile-check the Python tool
+        run: python -m py_compile add_applicant.py
+      - name: Validate the skills against the Agent Skills spec
+        run: node validate-skills.mjs
+      - name: Run smoke test (offline checks; live API checks skip without creds)
+        run: bash smoke_test.sh
+
+  changelog:
+    if: >-
+      github.event_name == 'pull_request' &&
+      !contains(github.event.pull_request.labels.*.name, 'no-changelog')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Require a CHANGELOG entry when a tool changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          tools=$(git diff --name-only "$BASE" "$HEAD" -- huntflow.js add_applicant.py reorder_stages.js setup.sh)
+          if [ -z "$tools" ]; then
+            echo "No tool changes — CHANGELOG entry not required."
+            exit 0
+          fi
+          if [ -n "$(git diff --name-only "$BASE" "$HEAD" -- CHANGELOG.md)" ]; then
+            echo "Tool changes come with a CHANGELOG entry."
+            exit 0
+          fi
+          echo "::error::These tools changed with no CHANGELOG.md entry:"
+          echo "$tools" | sed 's/^/  /'
+          echo "::error::Add an entry, or label the PR 'no-changelog' to skip this check."
+          exit 1

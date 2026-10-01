@@ -1,0 +1,5 @@
+id,expect,prompt,note
+add-linkedin-batch,huntflow-add,"Here are two LinkedIn profiles, add them to Huntflow for the Data Engineer vacancy: linkedin.com/in/example-one, linkedin.com/in/example-two","plain intake, the case the skill was written for"
+add-cv-file,huntflow-add,"A CV came in from the website, the file is in ~/Downloads/cv.pdf. Create the person in the ATS and attach the CV.","intake from a CV file rather than a URL"
+none-comp-question,none,"What salary should we offer a senior data engineer in Belgrade?","compensation question: no skill covers it"
+none-funnel-report,none,"Build a funnel report for September: how many candidates reached the final stage for each vacancy","a Huntflow task that is not intake"

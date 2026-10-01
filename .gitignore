@@ -1,0 +1,13 @@
+tokens.json
+.huntflow/
+*.pdf
+*.doc
+*.docx
+*.rtf
+.env
+.env.*
+node_modules/
+evals/trigger-benchmark.json
+__pycache__/
+*.pyc
+.DS_Store
