@@ -4,6 +4,8 @@
 
 Run your [Huntflow](https://huntflow.ru) recruiting day from the terminal instead of clicking through the web app. Pull up a vacancy's pipeline, check where a candidate stands, move someone forward or reject them with a reason, add a candidate straight from their CV. Type the commands yourself, or ask Claude to do it for you in plain language.
 
+This is an unofficial, personal project. It is not made by or affiliated with Huntflow.
+
 ## What you can do with it
 
 - **See your pipeline at a glance.** List open vacancies (all of them, or only yours), open one, and see everyone in it and the stage they're at. Filter the pipeline by stage.
@@ -340,6 +342,8 @@ If you see "No refresh token" or "Token refresh failed", create a new token pair
 ## Contributing
 
 Changing the tools or the skills? See [CONTRIBUTING.md](CONTRIBUTING.md) for the checks, the release steps and the skill trigger evals.
+
+Found a bug or have a question? [Open an issue](https://github.com/Da6ka/huntflow-tools/issues). For security problems, see [SECURITY.md](SECURITY.md) instead.
 
 ## License
 
