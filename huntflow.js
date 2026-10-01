@@ -42,6 +42,8 @@
  *
  * Flags:
  *   --json     Machine-readable JSON output
+ *   --         End of flags: the rest is literal text (needed when a comment contains
+ *              --json, --open or --mine)
  */
 
 const https = require('https');
@@ -143,7 +145,10 @@ async function refreshTokens() {
   const savedAccess = saveToKeychain('huntflow-access-token', data.access_token);
   const savedRefresh = saveToKeychain('huntflow-refresh-token', data.refresh_token);
   if (!savedAccess || !savedRefresh) {
-    writeTokenFile({ access_token: data.access_token, refresh_token: data.refresh_token });
+    // A refreshed pair that is not saved means the next call fails with 401.
+    if (!writeTokenFile({ access_token: data.access_token, refresh_token: data.refresh_token })) {
+      console.error(`WARNING: could not save refreshed tokens to Keychain or ${TOKEN_FILE}; the next call will fail with 401. Run setup.sh again.`);
+    }
   }
 
   return data.access_token;
@@ -572,6 +577,19 @@ async function cmdAdd(opts) {
   const applicantId = applicant.id;
   if (!applicantId) throw new Error(`Applicant create returned no id: ${JSON.stringify(applicant)}`);
 
+  try {
+    return await finishAdd(applicant, { opts, firstName, lastName, vacancy, status });
+  } catch (e) {
+    console.error(`WARNING: applicant ${applicantId} was created but setup did not finish (${(e && e.message) || JSON.stringify(e && e.body) || e}). ` +
+      `The API cannot delete applicants: finish or remove ${applicantId} in the Huntflow UI. Do not re-run before that, or a duplicate is created.`);
+    throw e;
+  }
+}
+
+// The steps after the applicant exists. Any failure here leaves a half-set-up record.
+async function finishAdd(applicant, { opts, firstName, lastName, vacancy, status }) {
+  const applicantId = applicant.id;
+
   // Primary email: PATCH after create (the create body silently drops it).
   // first_name/last_name are required on the PATCH.
   if (opts.email) {
@@ -587,6 +605,9 @@ async function cmdAdd(opts) {
     if (opts.location && keys['location']) q[keys['location']] = opts.location;
     // Secondary email lives in the "2nd Email" questionary field (additional info in the UI).
     if (opts.email2 && keys['2nd email']) q[keys['2nd email']] = opts.email2;
+    const wanted = { linkedin: opts.linkedin, github: opts.github, location: opts.location, '2nd email': opts.email2 };
+    const missing = Object.keys(wanted).filter(t => wanted[t] && !keys[t]);
+    if (missing.length) console.error(`WARNING: skipped (no such questionary field in this account): ${missing.join(', ')}`);
     if (Object.keys(q).length) {
       await api(acct(`/applicants/${num(applicantId)}/questionary`), 'POST', JSON.stringify(q));
     }
@@ -676,13 +697,23 @@ function formatApplicantDetail(a) {
 
 // --- Main ---
 
+// Strip only the flags we actually define, so a query fragment that happens to
+// start with `--` (e.g. `search --foo`) still reaches the command. Everything after
+// a bare `--` is literal text (e.g. `comment 5 -- note about --json`).
+const KNOWN_FLAGS = new Set(['--json', '--open', '--mine']);
+function splitArgs(argv) {
+  const cut = argv.indexOf('--');
+  const head = cut < 0 ? argv : argv.slice(0, cut);
+  const tail = cut < 0 ? [] : argv.slice(cut + 1);
+  return {
+    args: head,
+    filteredArgs: [...head.filter(a => !KNOWN_FLAGS.has(a)), ...tail],
+    jsonMode: head.includes('--json'),
+  };
+}
+
 async function main() {
-  const args = process.argv.slice(2);
-  const jsonMode = args.includes('--json');
-  // Strip only the flags we actually define, so a query fragment that happens to
-  // start with `--` (e.g. `search --foo`) still reaches the command.
-  const KNOWN_FLAGS = new Set(['--json', '--open', '--mine']);
-  const filteredArgs = args.filter(a => !KNOWN_FLAGS.has(a));
+  const { args, filteredArgs, jsonMode } = splitArgs(process.argv.slice(2));
   const command = filteredArgs[0];
 
   try {
@@ -1001,5 +1032,6 @@ if (require.main === module) {
     formatApplicant,
     formatPipelineApplicant,
     num,
+    splitArgs,
   };
 }

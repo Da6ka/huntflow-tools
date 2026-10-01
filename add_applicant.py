@@ -67,7 +67,7 @@ def first_email(text):
 def first_phone(text):
     """Best-effort phone from CV text. Collects phone-shaped tokens with at least 9
     digits (which excludes year ranges like "2024 - 2024") and prefers one on a line
-    that names a phone. Recovered numbers are worth eyeballing against the CV."""
+    that names a phone. Date ranges with two year groups are skipped. Recovered numbers are worth eyeballing against the CV."""
     if not text:
         return None
     candidates = []
@@ -75,6 +75,9 @@ def first_phone(text):
         labelled = bool(PHONE_LABEL_RE.search(line))
         for m in PHONE_RE.finditer(line):
             tok = m.group(0).strip()
+            # Two year-like groups ("2019-04 - 2021-06") are a date range, not a phone.
+            if len(re.findall(r'(?<!\d)(?:19|20)\d{2}(?!\d)', tok)) >= 2:
+                continue
             if len(re.sub(r'\D', '', tok)) >= 9:
                 candidates.append((labelled, tok))
     candidates.sort(key=lambda c: not c[0])  # labelled lines first
@@ -350,6 +353,8 @@ def main():
     if args.source_id:
         print(f'\n5. Source {args.source_id} (CV kept via files)...')
         full = api(f'/accounts/{account_id}/applicants/{aid}')
+        if not full.get('external'):
+            sys.exit(f'ERROR: applicant {aid} has no resume entry, so the source was not set. Set it in the UI.')
         eid = full['external'][0]['id']
         api(f'/accounts/{account_id}/applicants/{aid}/externals/{eid}', method='PUT',
             body={'account_source': args.source_id, 'data': {'body': text}, 'files': [file_id]})

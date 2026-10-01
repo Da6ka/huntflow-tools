@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Bash, this repo's huntflow.js and add_applicant.py on the machine, and Huntflow API credentials (see the README "Quick start"). Without them the skill can draft and plan, but every write step fails.
 metadata:
   author: Da6ka
-  version: "1.7.2"
+  version: "1.7.3"
 ---
 
 # huntflow-add
