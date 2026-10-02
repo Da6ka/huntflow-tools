@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **`huntflow.js update-contacts <id> [--email <addr>] [--phone <num>]`**: sets email and/or phone on an existing applicant. Until now contacts could only be set at `add` time (email) or through the UI.
+
 ## v1.7.3 — 2026-10-02
 
 Fixes from a code review. No new commands.

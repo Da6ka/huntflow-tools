@@ -8,7 +8,14 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { parseAddOpts, parseCommentOpts, formatVacancy, formatApplicant, formatPipelineApplicant, parseSearchOpts, formatCoworker, num, splitArgs } = require('./huntflow.js');
+const { parseAddOpts, parseUpdateContactsOpts, parseCommentOpts, formatVacancy, formatApplicant, formatPipelineApplicant, parseSearchOpts, formatCoworker, num, splitArgs } = require('./huntflow.js');
+
+test('parseUpdateContactsOpts: applicant id plus --email and --phone', () => {
+  const o = parseUpdateContactsOpts(['5', '--email', 'a@b.c', '--phone', '+1 555']);
+  assert.deepStrictEqual(o, { applicant: '5', email: 'a@b.c', phone: '+1 555' });
+  assert.throws(() => parseUpdateContactsOpts(['5', '--email']), /Missing value for --email/);
+  assert.throws(() => parseUpdateContactsOpts(['5', '--nope', 'x']), /Unknown argument/);
+});
 
 test('parseAddOpts: two positionals become first/last', () => {
   const o = parseAddOpts(['Jane', 'Doe']);

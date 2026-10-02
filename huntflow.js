@@ -28,6 +28,7 @@
  *   node huntflow.js divisions                       - divisions
  *   node huntflow.js tags                            - tags
  *   node huntflow.js sources                         - resume sources
+ *   node huntflow.js update-contacts <aid> [--email <addr>] [--phone <num>]  - set email/phone on an existing applicant
  *   node huntflow.js add <first> <last> --vacancy <vid> [opts]  - create applicant + attach to vacancy
  *
  * `add` options: --status <sid> (default: first pipeline stage), --position <text>,
@@ -635,6 +636,32 @@ async function finishAdd(applicant, { opts, firstName, lastName, vacancy, status
   return { id: applicantId, vacancy, status, tag: tagId, source: sourceId };
 }
 
+// Set email and/or phone on an existing applicant. The API requires first_name and
+// last_name on this PATCH, so they are read back and re-sent unchanged.
+async function cmdUpdateContacts(opts) {
+  const id = num(opts.applicant);
+  if (!id) throw new Error('update-contacts requires <applicant_id>');
+  if (!opts.email && !opts.phone) throw new Error('update-contacts needs --email and/or --phone');
+  const a = await api(acct(`/applicants/${id}`));
+  const body = { first_name: a.first_name, last_name: a.last_name };
+  if (opts.email) body.email = opts.email;
+  if (opts.phone) body.phone = opts.phone.replace(/[^\d+]/g, '');
+  await api(acct(`/applicants/${id}`), 'PATCH', JSON.stringify(body));
+  return { id, email: !!opts.email, phone: !!opts.phone };
+}
+
+function parseUpdateContactsOpts(tokens) {
+  const opts = { applicant: tokens[0] };
+  for (let i = 1; i < tokens.length; i++) {
+    if (tokens[i] !== '--email' && tokens[i] !== '--phone') throw new Error(`Unknown argument: ${tokens[i]}`);
+    const val = tokens[i + 1];
+    if (val === undefined) throw new Error(`Missing value for ${tokens[i]}`);
+    opts[tokens[i].slice(2)] = val;
+    i++;
+  }
+  return opts;
+}
+
 // Parse `add` args: two positionals (<first> <last>) plus --flag value pairs and
 // the boolean --no-tag.
 function parseAddOpts(tokens) {
@@ -815,6 +842,13 @@ async function main() {
         const opts = parseCommentOpts(filteredArgs.slice(1));
         result = await cmdComment(opts.applicant, opts.text, opts.vacancy);
         if (!jsonMode) { console.log(`Comment added to applicant [${opts.applicant}]`); return; }
+        break;
+      }
+
+      case 'update-contacts': {
+        const opts = parseUpdateContactsOpts(filteredArgs.slice(1));
+        result = await cmdUpdateContacts(opts);
+        if (!jsonMode) { console.log(`Contacts updated on applicant [${result.id}]`); return; }
         break;
       }
 
@@ -1025,6 +1059,7 @@ if (require.main === module) {
 } else {
   module.exports = {
     parseAddOpts,
+    parseUpdateContactsOpts,
     parseCommentOpts,
     parseSearchOpts,
     formatCoworker,
