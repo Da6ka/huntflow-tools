@@ -6,6 +6,12 @@
 
 - **`huntflow.js questionary <applicant_id>`**: reads an applicant's questionary custom fields (Location, LinkedIn, GitHub, 2nd email, personal sites). These are not in the `applicant` summary, so until now there was no way to read them from the CLI. Default output labels each field by its account title; `--json` returns the raw API object.
 
+## v1.8.0 — 2026-10-02
+
+### Added
+
+- **`huntflow.js update-contacts <id> [--email <addr>] [--phone <num>]`**: sets email and/or phone on an existing applicant. Until now contacts could only be set at `add` time (email) or through the UI.
+
 ## v1.7.3 — 2026-10-02
 
 Fixes from a code review. No new commands.

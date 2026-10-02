@@ -122,6 +122,7 @@ It was built around one team's form email, so expect to adapt it. At the start i
 | `move <aid> <vid> <sid> [rid]` | Move applicant to a stage, optional rejection ID |
 | `create-vacancy <position> --deadline <YYYY-MM-DD>` | Create a vacancy |
 | `close <vid> [reason_id]` | Close a vacancy (optional close reason ID) |
+| `update-contacts <id> [--email <addr>] [--phone <num>]` | Set email and/or phone on an existing applicant |
 | `update-vacancy <id>` | Update a vacancy (partial: only the fields you pass change) |
 | `close-reasons` | Vacancy close reason catalog |
 | `search <query>` | Search applicants. Optional filters: `--vacancy <id>`, `--status <id>`, `--tag <id>` (filters alone work too) |
