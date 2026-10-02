@@ -112,6 +112,7 @@ It was built around one team's form email, so expect to adapt it. At the start i
 | `vacancy <id>` | Vacancy details |
 | `pipeline <vacancy_id> [status_id]` | Candidates in the vacancy pipeline (optionally filtered to one stage) |
 | `applicant <id>` | Applicant details |
+| `questionary <applicant_id>` | Questionary custom fields (Location, LinkedIn, GitHub, ...) |
 | `resume <applicant_id>` | Resume entries (externals) |
 | `logs <applicant_id>` | Applicant pipeline history |
 | `comments <applicant_id>` | Comments on an applicant |

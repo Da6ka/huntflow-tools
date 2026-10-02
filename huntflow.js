@@ -268,6 +268,20 @@ async function cmdPipeline(vacancyId, statusId = null) {
 
 async function cmdApplicant(id) { return api(acct(`/applicants/${num(id)}`)); }
 
+// Questionary custom fields (Location, LinkedIn, GitHub, 2nd Email, ...) are not
+// in the applicant summary, so `applicant <id>` can't show them. This reads them.
+async function cmdQuestionary(id) { return api(acct(`/applicants/${num(id)}/questionary`)); }
+
+// key -> original-case title, to label questionary values for human output.
+async function resolveQuestionaryTitles() {
+  const schema = await api(acct('/applicants/questionary'));
+  const byKey = {};
+  for (const [key, field] of Object.entries(schema || {})) {
+    if (field && field.title) byKey[key] = field.title;
+  }
+  return byKey;
+}
+
 async function cmdResume(applicantId) {
   const applicant = await api(acct(`/applicants/${num(applicantId)}`));
   if (!applicant.external || !applicant.external.length) return { items: [] };
@@ -792,6 +806,23 @@ async function main() {
         if (!jsonMode) { console.log(formatApplicantDetail(result)); return; }
         break;
 
+      case 'questionary': {
+        if (!filteredArgs[1]) { console.error('Usage: questionary <applicant_id>'); process.exit(1); }
+        result = await cmdQuestionary(filteredArgs[1]);
+        if (!jsonMode) {
+          const titles = await resolveQuestionaryTitles();
+          const entries = Object.entries(result || {}).filter(([k]) => k !== 'id');
+          if (!entries.length) { console.log('No questionary fields set'); return; }
+          for (const [k, v] of entries) {
+            const label = titles[k] || k;
+            const val = (v == null || v === '') ? '—' : (typeof v === 'object' ? JSON.stringify(v) : v);
+            console.log(`${label}: ${val}`);
+          }
+          return;
+        }
+        break;
+      }
+
       case 'resume':
         if (!filteredArgs[1]) { console.error('Usage: resume <applicant_id>'); process.exit(1); }
         result = await cmdResume(filteredArgs[1]);
@@ -990,6 +1021,7 @@ Set HUNTFLOW_ACCOUNT_ID env var, then:
   vacancy <id>                    Vacancy details
   pipeline <vacancy_id> [sid]     Candidates in vacancy pipeline (optional stage filter)
   applicant <id>                  Applicant details
+  questionary <applicant_id>      Applicant questionary custom fields (Location, LinkedIn, GitHub, ...)
   resume <applicant_id>           Applicant resume(s)
   logs <applicant_id>             Applicant pipeline history
   comments <applicant_id>         Comments on an applicant
