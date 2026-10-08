@@ -73,6 +73,10 @@ For a LinkedIn candidate the CV should be LinkedIn's own **Save to PDF** export
 (profile → ⋯ → Save to PDF), not a hand-built text file — it carries contacts
 and full education that page text does not.
 
+Do not open a CV PDF with the `Read` tool: one PDF came back as ~900K characters of
+tool output. Huntflow parses the file on upload, so nothing needs reading. To
+check a CV's content, extract text first (`pdftotext <file> -`) and read only that.
+
 If you did not pass `--tag-id` and `--source-id`, set them by hand:
 
 ```bash
