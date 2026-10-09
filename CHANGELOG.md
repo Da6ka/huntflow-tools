@@ -4,6 +4,7 @@
 
 ### Changed
 
+- `huntflow.js` now refreshes the access token on Huntflow's `404 error.robot_token.not_found` as well as on 401, so an expired access token with a live refresh token self-heals. Other 404s (missing applicant/vacancy) still just surface.
 - `huntflow-add` skill: do not `Read` CV PDFs (a single read returned ~900K characters of tool output); use `pdftotext` and read the text only.
 
 ### Added
