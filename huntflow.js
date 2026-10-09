@@ -202,16 +202,21 @@ function rawRequest(path, method = 'GET', body = null, useAuth = true, tokenOver
   });
 }
 
+function isTokenNotFound(err) {
+  const errors = err && err.status === 404 && err.body && err.body.errors;
+  return Array.isArray(errors) && errors.some(e => e && e.title === 'error.robot_token.not_found');
+}
+
 async function api(path, method = 'GET', body = null) {
   try {
     return await rawRequest(path, method, body);
   } catch (err) {
-    // Auto-refresh only on 401. Huntflow returns 401 for a recognized-but-expired
-    // token (the normal refresh trigger). A malformed/corrupt token is unknown to
-    // the server and comes back as 404 instead — that does NOT self-heal here, it
-    // just surfaces the error. Atomic token writes (writeTokenFile) are what keep a
-    // partial write from ever leaving such a corrupt token behind.
-    if (err && err.status === 401) {
+    // Auto-refresh on 401 (Huntflow's normal expired-token answer) and on the
+    // 404 error.robot_token.not_found it returns for an expired/unknown access
+    // token. Other 404s (a missing applicant, vacancy...) must not trigger it.
+    // Atomic token writes (writeTokenFile) keep a partial write from ever
+    // leaving a corrupt token behind.
+    if (err && (err.status === 401 || isTokenNotFound(err))) {
       const newToken = await refreshTokens();
       // Use the freshly issued token directly; re-reading storage can return a
       // stale Keychain value if the write fell back to the token file.
