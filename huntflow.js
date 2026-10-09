@@ -14,7 +14,7 @@
  *   node huntflow.js pipeline <vacancy_id> [sid]     - candidates in vacancy pipeline (optional stage filter)
  *   node huntflow.js applicant <id>                  - applicant details
  *   node huntflow.js resume <applicant_id>           - applicant resume(s)
- *   node huntflow.js logs <applicant_id>             - applicant pipeline history
+ *   node huntflow.js logs <applicant_id> [--page <n>] - applicant pipeline history
  *   node huntflow.js comments <applicant_id>         - comments on an applicant
  *   node huntflow.js comment <aid> <text> [--vacancy <vid>]  - add a comment
  *   node huntflow.js statuses                        - pipeline stages
@@ -299,7 +299,9 @@ async function cmdResume(applicantId) {
   return { items };
 }
 
-async function cmdLogs(applicantId) { return api(acct(`/applicants/${num(applicantId)}/logs`)); }
+async function cmdLogs(applicantId, page = null) {
+  return api(acct(`/applicants/${num(applicantId)}/logs${page ? `?page=${num(page)}` : ''}`));
+}
 async function cmdComments(applicantId) { return api(acct(`/applicants/${num(applicantId)}/logs?type=COMMENT`)); }
 
 // Comments are journal entries (POST .../logs). Without `vacancy` it is a personal
@@ -842,8 +844,11 @@ async function main() {
         break;
 
       case 'logs':
-        if (!filteredArgs[1]) { console.error('Usage: logs <applicant_id>'); process.exit(1); }
-        result = await cmdLogs(filteredArgs[1]);
+        if (!filteredArgs[1]) { console.error('Usage: logs <applicant_id> [--page <n>]'); process.exit(1); }
+        {
+          const pi = args.indexOf('--page');
+          result = await cmdLogs(filteredArgs[1], pi >= 0 ? args[pi + 1] : null);
+        }
         if (!jsonMode) {
           if (!result.items || !result.items.length) { console.log('No records'); return; }
           result.items.forEach(log => {
@@ -1023,7 +1028,7 @@ Set HUNTFLOW_ACCOUNT_ID env var, then:
   applicant <id>                  Applicant details
   questionary <applicant_id>      Applicant questionary custom fields (Location, LinkedIn, GitHub, ...)
   resume <applicant_id>           Applicant resume(s)
-  logs <applicant_id>             Applicant pipeline history
+  logs <applicant_id> [--page <n>]  Applicant pipeline history (30 per page)
   comments <applicant_id>         Comments on an applicant
   comment <applicant_id> <text> [--vacancy <vid>]   Add a comment (personal note without --vacancy; no edit or delete)
   statuses                        Pipeline stages

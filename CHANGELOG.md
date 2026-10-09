@@ -8,6 +8,7 @@
 
 ### Added
 
+- **`huntflow.js logs <applicant_id> --page <n>`**: `logs` returned only the newest 30 entries, so the history of an applicant with more entries was silently truncated. `--page` reads the older pages (`total_pages` is in the `--json` output).
 - **`huntflow.js questionary <applicant_id>`**: reads an applicant's questionary custom fields (Location, LinkedIn, GitHub, 2nd email, personal sites). These are not in the `applicant` summary, so until now there was no way to read them from the CLI. Default output labels each field by its account title; `--json` returns the raw API object.
 
 ## v1.8.0 — 2026-10-02
