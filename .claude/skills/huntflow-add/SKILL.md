@@ -44,11 +44,18 @@ Applications that arrive by email from a website form: use
 ## Step 1: dedupe before creating anything
 
 ```bash
-node ~/.claude/utils/huntflow.js search "First Last" --json
+node ~/.claude/utils/huntflow.js search "<email>" --json
+node ~/.claude/utils/huntflow.js search "<phone>" --json
+node ~/.claude/utils/huntflow.js search "Last" --json
 ```
 
+Search each contact you have (email exact, phone), then the surname. A name-only
+search misses a person who applied under a variant spelling or a changed
+surname; a contact match does not.
+
 Search account-wide, not just the target vacancy. If a match comes back, stop
-and report it rather than creating a second record. A person who mass-applied to
+and report it rather than creating a second record. A matching email or phone
+is the same person even when the name differs. A person who mass-applied to
 several roles already exists.
 
 ## Step 2a: add without a CV
