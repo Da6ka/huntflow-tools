@@ -29,9 +29,14 @@ user's account notes (IDs, team rules) and applies on top of everything below.
 `huntflow.js add` already applies the default tag, resolves the LinkedIn source,
 writes questionary fields and links the vacancy in one call. `add_applicant.py`
 uploads and parses the CV and links the vacancy. It sets tag and source only when
-you pass `--tag-id` and `--source-id` (plus `--linkedin`, `--github`, `--location`,
-`--email2` for questionary fields); without those flags it skips both, and you
-make the separate calls below.
+you pass `--tag-id` and `--source-id` (plus `--linkedin`, `--github`, `--telegram`,
+`--location`, `--email2` for questionary fields); without those flags it skips
+both, and you make the separate calls below.
+
+It also attaches the CV file to the vacancy-link log entry unless you pass
+`--no-link-files`, so the PDF shows up a second time in the vacancy history next
+to the comment. The CV is already on the card; pass the flag by default. Put an
+application message or its source (channel, handle, date) in `--comment`.
 
 Applications that arrive by email from a website form: use
 `huntflow-site-applications` instead.

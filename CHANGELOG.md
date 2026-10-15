@@ -5,6 +5,7 @@
 ### Changed
 
 - `huntflow-add` skill: do not `Read` CV PDFs (a single read returned ~900K characters of tool output); use `pdftotext` and read the text only.
+- `huntflow-add` skill: document that `add_applicant.py` attaches the CV to the vacancy-link log entry unless `--no-link-files` is passed, list `--telegram`, and point application text to `--comment`.
 
 ### Added
 
