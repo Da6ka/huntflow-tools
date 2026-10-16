@@ -113,7 +113,7 @@ It was built around one team's form email, so expect to adapt it. At the start i
 | `pipeline <vacancy_id> [status_id]` | Candidates in the vacancy pipeline (optionally filtered to one stage) |
 | `applicant <id>` | Applicant details |
 | `questionary <applicant_id>` | Questionary custom fields (Location, LinkedIn, GitHub, ...) |
-| `resume <applicant_id>` | Resume entries (externals) |
+| `resume <applicant_id>` | Resume entries (externals): source, attached file names and the resume text |
 | `logs <applicant_id> [--page <n>]` | Applicant pipeline history (30 entries per page, newest first; `--json` shows `total_pages`) |
 | `comments <applicant_id>` | Comments on an applicant |
 | `comment <applicant_id> <text> [--vacancy <vid>]` | Add a comment; a personal note without `--vacancy`. The API has no edit or delete |
