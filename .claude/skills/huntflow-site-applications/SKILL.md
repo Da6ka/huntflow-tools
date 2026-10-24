@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Bash, ~/.claude/utils/add_applicant.py and huntflow.js, Huntflow credentials (Keychain), a Gmail connector for the mailbox that receives the form emails, and Chrome MCP logged into that mailbox for CV download.
 metadata:
   author: Da6ka
-  version: "1.8.0"
+  version: "1.9.0"
 ---
 
 # huntflow-site-applications

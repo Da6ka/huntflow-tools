@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v1.9.0 — 2026-10-24
+
 ### Fixed
 
 - **`huntflow.js resume <applicant_id>`**: the default output printed only position, area and source, so a CV with a parsed text looked empty unless `--json` was passed. It now also prints the attached file names and the resume text.
