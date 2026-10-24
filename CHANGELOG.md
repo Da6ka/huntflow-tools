@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- `huntflow.js`: when neither the Keychain nor `~/.huntflow/tokens.json` has tokens, falls back to the `HUNTFLOW_ACCESS_TOKEN` / `HUNTFLOW_REFRESH_TOKEN` env vars (for cloud runs where setup scripts cannot see them). A refreshed pair is still saved to the file, which wins on the next call.
+
 ## v1.9.0 — 2026-10-24
 
 ### Fixed

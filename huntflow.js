@@ -6,6 +6,7 @@
  * Reads ACCOUNT_ID from env (HUNTFLOW_ACCOUNT_ID) and tokens from:
  *   1. macOS Keychain (service: huntflow-access-token / huntflow-refresh-token, account: huntflow), or
  *   2. ~/.huntflow/tokens.json — { "access_token": "...", "refresh_token": "..." }
+ *   3. env HUNTFLOW_ACCESS_TOKEN / HUNTFLOW_REFRESH_TOKEN (fallback for cloud runs; a refreshed pair is saved to the file, which wins next time)
  *
  * Usage:
  *   node huntflow.js me                              - current user
@@ -127,12 +128,14 @@ function writeTokenFile(tokens) {
 function getAccessToken() {
   return getFromKeychain('huntflow-access-token')
       || (readTokenFile() || {}).access_token
+      || process.env.HUNTFLOW_ACCESS_TOKEN
       || null;
 }
 
 function getRefreshToken() {
   return getFromKeychain('huntflow-refresh-token')
       || (readTokenFile() || {}).refresh_token
+      || process.env.HUNTFLOW_REFRESH_TOKEN
       || null;
 }
 

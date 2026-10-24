@@ -324,7 +324,7 @@ node add_resume.js 500001 cv.pdf --keep-temp
 
 The Huntflow API uses short-lived access tokens (about 5 minutes) and long-lived refresh tokens (about 14 days). The tools:
 
-1. Read the access token from the macOS Keychain or from `~/.huntflow/tokens.json`.
+1. Read the access token from the macOS Keychain, then `~/.huntflow/tokens.json`, then the `HUNTFLOW_ACCESS_TOKEN` env var (the refresh token likewise).
 2. On a 401, call `POST /token/refresh` with the refresh token.
 3. Save the new pair back to the same place.
 
