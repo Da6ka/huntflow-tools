@@ -838,6 +838,9 @@ async function main() {
               if (d.area) console.log(`Area: ${d.area.name || d.area}`);
             }
             if (ext.auth_type) console.log(`Source: ${ext.auth_type}`);
+            // Names only: file urls are signed links.
+            if (ext.files && ext.files.length) console.log(`Files: ${ext.files.map(f => f.name).join(', ')}`);
+            if (ext.data && ext.data.body) console.log(`\n${ext.data.body}`);
           });
           return;
         }

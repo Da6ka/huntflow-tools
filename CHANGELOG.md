@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- **`huntflow.js resume <applicant_id>`**: the default output printed only position, area and source, so a CV with a parsed text looked empty unless `--json` was passed. It now also prints the attached file names and the resume text.
+
 ### Changed
 
 - `huntflow-add` skill: the dedupe step now searches by email and phone, then surname, not by name alone. A contact match is the same person even when the surname differs.
