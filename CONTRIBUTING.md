@@ -7,6 +7,7 @@ Everything here is for people changing the tools or the skills. If you only want
 ```bash
 bash smoke_test.sh            # offline checks, plus read-only live checks if HUNTFLOW_ACCOUNT_ID is set
 node validate-skills.mjs      # skills against the Agent Skills spec
+node test_validate_skills.mjs # validator regression checks, no accounts or model calls
 ```
 
 Nothing in the smoke test writes to Huntflow. `reorder_stages.js` and the merge step of `add_resume.js` need a browser session cookie, so CI cannot exercise them. Run `node reorder_stages.js list` or a `--dry-run` by hand after touching them.
@@ -21,13 +22,15 @@ Nothing in the smoke test writes to Huntflow. `reorder_stages.js` and the merge 
 
 ## Releases
 
-The release badge in `README.md` is a static shields.io badge. `validate-skills.mjs` reads the version from it and compares it with `metadata.version` in each `SKILL.md`, so the repo and both skills carry one number. After tagging a release, bump the badge and both skill versions together, or CI fails.
+The release badge in `README.md` is a static shields.io badge. `validate-skills.mjs` reads the version from it and compares it with `metadata.version` in each `SKILL.md`, so the repo and all Claude Code and Codex skill copies carry one number. After tagging a release, bump the badge and all skill versions together, or CI fails. Small changes stay under Unreleased without a version bump.
 
 ## Checking the skills
 
-`node validate-skills.mjs` checks both skills against the [Agent Skills specification](https://agentskills.io/specification): frontmatter fields and their limits, `name` matching its directory (Claude Code loads a skill by directory, so a mismatch shows up as the skill never appearing), relative links that resolve, `metadata.version` matching the release badge, and unquoted values that real YAML would misread (a `: ` or ` #` inside them). CI runs it on every PR.
+`node validate-skills.mjs` checks both skills in both `.claude/skills` and `.agents/skills` against the [Agent Skills specification](https://agentskills.io/specification): frontmatter fields and their limits, `name` matching its directory (Claude Code loads a skill by directory, so a mismatch shows up as the skill never appearing), relative links that resolve, `metadata.version` matching the release badge, and unquoted values that real YAML would misread (a `: ` or ` #` inside them). For Codex copies it also checks this repo's required `agents/openai.yaml` interface fields, description length and prompt invocation. CI runs it and `node test_validate_skills.mjs` on every PR. The regression check uses temporary fixtures to verify that invalid Codex versions, prompts and missing directories fail validation.
 
-`node evals/run-trigger-evals.mjs` answers a different question: given a recruiter's sentence, which skill does Claude actually pick? The failure worth catching is one skill description pulling the other's work, and `huntflow-add` writes to a live ATS. The verdict comes from the tool trace rather than from a judge reading prose, and every run withholds Bash, Write, Edit and the web tools, so a skill can be chosen but cannot act. It calls the model and costs money (about $0.08 a case), so it is not in CI:
+Keep shared intake rules consistent between the runtime copies. Tool paths, attachment capabilities and execution permissions can differ. Private account notes, credentials, CVs and personal handovers do not belong in either skills directory.
+
+`node evals/run-trigger-evals.mjs` answers a different question for Claude Code only: given a recruiter's sentence, which skill does Claude actually pick? The failure worth catching is one skill description pulling the other's work, and `huntflow-add` writes to a live ATS. The verdict comes from the tool trace rather than from a judge reading prose, and every run withholds Bash, Write, Edit and the web tools, so a skill can be chosen but cannot act. It calls the model and costs money (about $0.08 a case), so it is not in CI:
 
 ```bash
 node evals/run-trigger-evals.mjs --dry       # list cases, spend nothing

@@ -27,7 +27,9 @@ jobs:
       - name: Compile-check the Python tool
         run: python -m py_compile add_applicant.py
       - name: Validate the skills against the Agent Skills spec
-        run: node validate-skills.mjs
+        run: |
+          node validate-skills.mjs
+          node test_validate_skills.mjs
       - name: Run smoke test (offline checks; live API checks skip without creds)
         run: bash smoke_test.sh
 

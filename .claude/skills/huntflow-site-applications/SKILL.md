@@ -2,7 +2,7 @@
 name: huntflow-site-applications
 description: Process job applications that arrive by email from a company website form into Huntflow. Finds the application emails in the team Gmail for the last 30 days, dedupes against Huntflow, downloads the CV, adds new candidates with source, tag, questionary fields and vacancy link, marks the emails read, and reports who is already in Huntflow but never got a reply. Use on "process the website applications", "load the site applications into Huntflow", "check new applications from the form", or any request to intake website applications.
 license: MIT
-compatibility: Requires Bash, ~/.claude/utils/add_applicant.py and huntflow.js, Huntflow credentials (Keychain), a Gmail connector for the mailbox that receives the form emails, and Chrome MCP logged into that mailbox for CV download.
+compatibility: Requires a terminal, ~/.claude/utils/add_applicant.py and huntflow.js, Huntflow credentials, a Gmail connector for the form mailbox, and a way to save the original CV locally (connector transfer or authorized browser download).
 metadata:
   author: Da6ka
   version: "1.9.0"
@@ -16,11 +16,11 @@ This flow was built around one team's form email. The sender address, subject li
 
 ## 1. Trigger
 
-The recruiter asks to process website applications. Nothing runs on a schedule. Writes to Huntflow happen only after they have seen the plan (who is new, who is skipped).
+The recruiter asks to process website applications. Nothing runs on a schedule. Uploads, Huntflow writes and Gmail label changes require confirmation of the concrete plan (who is new, who is skipped, what changes).
 
 ## 2. Find the emails in Gmail
 
-Search the form's sender and subject over the last 30 days, no UNREAD filter (Huntflow returns at most 30 records per request, so a longer window is not searchable). One thread can bundle several applicants: read every message.
+Search the form's sender and subject over the last 30 days unless another period is requested, with no UNREAD filter. Paginate all results. Huntflow's page size does not limit Gmail search dates. One thread can bundle several applicants: read every message.
 
 Take the candidate's email from the body (`Name and email`), not from From:, which is the form's technical address. The body also has the position, the message and a website link. A CV PDF is attached.
 
@@ -32,20 +32,27 @@ Search each address separately, then phone, then surname:
 node ~/.claude/utils/huntflow.js search "<query>" --json
 ```
 
-A candidate counts as absent only when nothing matches by any address, phone or surname. A contact match is a duplicate in ~99% of cases; a different surname is not an argument against (it changes after marriage). Huntflow search seems to find email only in the main field, not in "Email 2", so a miss by email proves nothing (reported by the recruiter, not verified).
+A candidate counts as absent only when nothing matches by any address, phone or surname. A contact match is strong duplicate evidence; resolve shared or contradictory contacts before merging identities. A different surname can still belong to the same person. Huntflow search seems to find email only in the main field, not in "Email 2", so a miss by email proves nothing (reported by the recruiter, not verified).
 
 ## 4. Who needs handling
 
 - Not in Huntflow: full cycle (steps 5-10).
-- In Huntflow: check outgoing mail. Gmail search `from:me to:(a OR b OR c) after:<response date>`. Do not check the response thread itself, the answer usually goes as a new message. Replies go from the same mailbox, so no other channel is checked. No outgoing mail: put a line in the final report, change nothing in Huntflow. Outgoing mail exists: skip.
+- In Huntflow: check outgoing mail. Gmail search `from:me to:(a OR b OR c) after:<response date>`. Do not check the response thread itself, the answer usually goes as a new message. Replies go from the same mailbox, so no other channel is checked. No outgoing mail: report that no sent reply was found in the searched mailbox and period; change nothing in Huntflow. Outgoing mail exists: skip. Drafts are not sent replies.
 
 ## 5. Download the CV
 
-Gmail connector cannot download attachments. Use Chrome MCP:
+Inspect the current Gmail connector's attachment capabilities first. Read the
+parent message, use its exact attachment ID (or filename if the ID is unavailable)
+and download the supported original through the connector. Transfer a provider
+file URI to a real local file before invoking the CLI; extracted text is not the
+original CV. Do not assume a connector can or cannot download every MIME type.
 
-1. Open `https://mail.google.com/mail/u/0/#all/<msgId>` and confirm u/0 is still the right mailbox (accounts can swap slots). If it asks to sign in, stop and tell the recruiter.
-2. `find` "Download attachment <file>", click. The file lands in ~/Downloads, sometimes only after about 2 minutes. Each retry leaves a `name (1).pdf` copy.
-3. Fallback: the top-level "Add to Drive" button, then the Drive connector (`search_files` by exact title, filenames are often generic).
+When no usable original can be obtained through the connector, use authorized
+browser download after checking the applicable browser instructions. Verify the
+mailbox and selected attachment instead of assuming Gmail u/0 is the work account.
+Inspect download state before retrying to avoid duplicate files. If downloading
+is blocked, keep the application pending and report it. Do not upload to Drive
+merely to work around a download limitation.
 
 ## 6. Add to Huntflow
 
@@ -57,7 +64,7 @@ python3 ~/.claude/utils/add_applicant.py --cv <pdf> \
   [--email2 <second>] [--linkedin <url>] [--github <url>] [--telegram <handle>] [--location "<text>"] --dry-run
 ```
 
-Run with `--dry-run` first, show the body, then repeat without it. Names exactly as in the CV (form names can differ from the CV, e.g. a short form name versus the full legal name). Fix a name later with PATCH on the applicant (PUT is 405).
+Show locally extracted fields and obtain upload authorization before running `--dry-run`: it uploads the CV before printing the applicant body. Confirm creation separately if it was not already included in the approved plan. Then run without `--dry-run`. Names exactly as in the CV (form names can differ from the CV, e.g. a short form name versus the full legal name). Fix a name later with PATCH on the applicant (PUT is 405).
 
 ## 7. Field rules
 
@@ -75,11 +82,11 @@ Match by the position in the form against `huntflow.js vacancies --open`. If no 
 
 ## 10. Rejections
 
-After intake offer a Gmail draft (bare, no signature, never sent) and a move to the contacted stage. The default order is intake stage, contacted stage, reject stage (roles as defined in `huntflow-add`, resolved from `huntflow.js statuses`, never by stage name; the local notes file can describe another flow), and the reject step only after the recruiter sent the email and said go. Ask which reason applies, do not infer (`huntflow.js rejections`; the field is `rejection_reason`). Location or work-authorization rules for specific countries come from the local notes file.
+After intake offer a Gmail draft (bare, no signature, never sent). A draft does not justify moving to contacted; verify an actual sent message and obtain confirmation of the stage update. The default order is intake stage, contacted stage, reject stage (roles as defined in `huntflow-add`, resolved from `huntflow.js statuses`, never by stage name; the local notes file can describe another flow), and the reject step only after the recruiter sent the email and said go. Ask which reason applies, do not infer (`huntflow.js rejections`; the field is `rejection_reason`). Location or work-authorization rules for specific countries come from the local notes file.
 
 ## 11. Mark read
 
-After a successful Huntflow write, remove UNREAD from the source emails: `unlabel_message` or `unlabel_thread` with `["UNREAD"]`. `get_message` does not clear it. This is a side step after intake, never a selection filter.
+After a verified Huntflow write and confirmation to mark read, remove UNREAD from the individual processed message with the available Gmail label tool. Avoid changing an entire thread containing other applicants. `get_message` does not clear UNREAD. Leave failed or pending applications alone; unread is never a selection filter.
 
 ## 12. Verify
 

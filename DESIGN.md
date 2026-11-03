@@ -1,7 +1,7 @@
 Design Doc: huntflow-tools
 ===========================
 
-Status: as-built (retroactive). Reflects the codebase as of 2026-07-13, with the structure and verification sections refreshed 2026-10-02.
+Status: as-built (retroactive). Reflects the codebase as of 2026-07-13, with the skill integration and verification sections refreshed 2026-11-03.
 
 Context and motivation
 -----------------------
@@ -9,7 +9,7 @@ Context and motivation
 Huntflow's own UI is the only way to do most ATS tasks by hand — checking a
 pipeline, moving a candidate, adding an inbound applicant from a CV. This repo
 gives that same functionality a scriptable command-line surface, built
-specifically to be called by an AI agent (Claude Code) via Bash, with `--json`
+specifically to be called by an AI agent (Claude Code or Codex) via a terminal, with `--json`
 output on every command so results can be parsed rather than screen-scraped.
 
 Goals:
@@ -42,6 +42,12 @@ module would cost more than it saves):
 | `add_resume.js`       | Node     | Public API (upload, create) + internal web API (merge) | Bearer token + session cookie |
 | `setup.sh`            | Bash     | —                                  | writes the Bearer token pair (interactive/local) |
 | `.claude/hooks/session-start.sh` | Bash | — | writes the Bearer token pair (remote/cloud, from env) |
+
+Claude Code skills live in `.claude/skills`; Codex skills live in
+`.agents/skills`, with `agents/openai.yaml` interface metadata. Both versions
+call the same scripts and use the existing Keychain or token file. Codex can
+read `~/.codex/huntflow-local.md`, falling back to the Claude account notes.
+The Claude SessionStart hook is not installed or run by Codex.
 
 `huntflow.js` is the main surface: read operations (`me`, `vacancies`,
 `vacancy`, `pipeline`, `applicant`, `resume`, `logs`, `statuses`,
@@ -153,14 +159,17 @@ Known accepted limitations
 - **Huntflow's CV parser is imperfect** (`add_applicant.py`): known to
   mis-extract fields like phone/email from résumé text. `--phone`/`--email`
   overrides and `--dry-run` exist specifically so a human checks parsed
-  output before it's posted on real (non-dry-run) runs.
+  output before applicant creation. The dry run itself uploads the CV for
+  parsing, so an agent needs upload authorization before invoking it.
 
 Verification
 -------------
 
 CI (see badge in README.md) runs two layers: a direct `node --check`/
 `py_compile` syntax pass over the entry points, then `validate-skills.mjs`,
-then `smoke_test.sh`, which re-checks syntax locally, runs the unit tests
+which validates both runtime skill directories and Codex UI metadata.
+`test_validate_skills.mjs` checks the validator with isolated fixtures.
+Then `smoke_test.sh` re-checks syntax locally, runs the unit tests
 (`test_huntflow.js`, `test_add_resume.js`, `test_parse.py`,
 `test_raw_request.py`, `test_token_file.py`), and adds live read-only checks (`me`,
 `statuses`, `vacancies --open`) against the configured account when

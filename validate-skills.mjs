@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Dependency-free structural validation for the skills in .claude/skills/.
-// Catches the failure modes that actually break a Claude skill:
+// Dependency-free structural validation for Claude Code and Codex skills.
+// Catches the failure modes that actually break a skill:
 //   1. Frontmatter that violates the Agent Skills spec
 //      (https://agentskills.io/specification): a bad `name`, an over-long
 //      `description`, an unknown field.
@@ -19,11 +19,11 @@
 // skills-ref by hand when cutting a release.
 // Run with: node validate-skills.mjs   (exits non-zero on any failure)
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
-import { join, dirname, resolve, basename } from "node:path";
+import { join, dirname, resolve, basename, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const skillsRoot = join(root, ".claude", "skills");
+const skillsRoots = [".claude/skills", ".agents/skills"].map((path) => join(root, path));
 const errors = [];
 const warnings = [];
 
@@ -148,7 +148,7 @@ function readmeVersion() {
 function validateSkill(dir) {
   const name = basename(dir);
   const skillPath = join(dir, "SKILL.md");
-  const label = `.claude/skills/${name}/SKILL.md`;
+  const label = relative(root, skillPath);
   if (!existsSync(skillPath)) {
     errors.push(`${label} is missing`);
     return null;
@@ -273,33 +273,55 @@ function checkLinks(skillPath, label) {
   }
 }
 
-if (!existsSync(skillsRoot)) {
-  console.error(`No skills directory at ${skillsRoot}`);
-  process.exit(1);
+function validateCodexInterface(skill) {
+  const path = join(dirname(skill.skillPath), "agents", "openai.yaml");
+  const label = relative(root, path);
+  if (!existsSync(path)) {
+    errors.push(`${label} is missing`);
+    return;
+  }
+  const ui = parseFrontmatter(readFileSync(path, "utf8"), label).interface;
+  for (const key of ["display_name", "short_description", "default_prompt"]) {
+    if (typeof ui?.[key] !== "string" || !ui[key].trim()) {
+      errors.push(`${label}: interface.${key} must be a non-empty string`);
+    }
+  }
+  if (typeof ui?.short_description === "string" &&
+      (ui.short_description.length < 25 || ui.short_description.length > 64)) {
+    errors.push(`${label}: interface.short_description must be 25-64 characters`);
+  }
+  if (typeof ui?.default_prompt === "string" && !new RegExp(`\\$${skill.name}(?![a-z0-9-])`).test(ui.default_prompt)) {
+    errors.push(`${label}: interface.default_prompt must mention $${skill.name}`);
+  }
 }
 
-const dirs = readdirSync(skillsRoot)
-  .map((entry) => join(skillsRoot, entry))
-  .filter((full) => statSync(full).isDirectory())
-  .sort();
-
-if (!dirs.length) {
-  console.error(`No skills found under ${skillsRoot}`);
-  process.exit(1);
-}
+const dirs = skillsRoots.flatMap((skillsRoot) => {
+  if (!existsSync(skillsRoot)) {
+    errors.push(`No skills directory at ${skillsRoot}`);
+    return [];
+  }
+  const found = readdirSync(skillsRoot)
+    .map((entry) => join(skillsRoot, entry))
+    .filter((full) => statSync(full).isDirectory())
+    .sort();
+  if (!found.length) errors.push(`No skills found under ${skillsRoot}`);
+  return found;
+});
 
 const expectedVersion = readmeVersion();
 for (const dir of dirs) {
   const skill = validateSkill(dir);
   if (!skill) continue;
-  checkLinks(skill.skillPath, `.claude/skills/${skill.name}/SKILL.md`);
+  const label = relative(root, skill.skillPath);
+  checkLinks(skill.skillPath, label);
+  if (dir.startsWith(join(root, ".agents") + sep)) validateCodexInterface(skill);
   const metadata = skill.fields.metadata;
   const version = typeof metadata === "object" && metadata ? metadata.version : undefined;
   if (version === undefined) {
-    errors.push(`.claude/skills/${skill.name}/SKILL.md is missing "metadata.version"`);
+    errors.push(`${label} is missing "metadata.version"`);
   } else if (expectedVersion !== undefined && version !== expectedVersion) {
     errors.push(
-      `.claude/skills/${skill.name}/SKILL.md metadata.version (${version}) does not match the README release badge (${expectedVersion})`,
+      `${label} metadata.version (${version}) does not match the README release badge (${expectedVersion})`,
     );
   }
 }

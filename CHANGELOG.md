@@ -2,8 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- Codex versions of `huntflow-add` and `huntflow-site-applications` in `.agents/skills`, with UI metadata, existing CLI authentication and account-note fallback.
+- Skill validation now covers both runtime directories and Codex interface metadata, with offline regression checks in CI.
+- README installation and usage instructions for Codex alongside Claude Code.
+
 ### Changed
 
+- Shared skill instructions now require confirmation before uploads and writes, distinguish drafts from sent contact, and use available attachment tools before browser downloads. Gmail search dates are independent of Huntflow pagination.
+- Document that `add_applicant.py --dry-run` uploads the CV for parsing; `huntflow.js add` has no dry-run mode. Clarify that token environment fallback belongs to the Node helper.
 - `huntflow.js`: when neither the Keychain nor `~/.huntflow/tokens.json` has tokens, falls back to the `HUNTFLOW_ACCESS_TOKEN` / `HUNTFLOW_REFRESH_TOKEN` env vars (for cloud runs where setup scripts cannot see them). A refreshed pair is still saved to the file, which wins on the next call.
 
 ## v1.9.0 — 2026-10-24
