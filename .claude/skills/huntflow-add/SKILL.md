@@ -19,6 +19,15 @@ Tag, source, status and vacancy IDs are per-account. Look them up with
 guessing. If `~/.claude/huntflow-local.md` exists, read it first: it holds this
 user's account notes (IDs, team rules) and applies on top of everything below.
 
+## Confirm writes
+
+Complete account-wide dedupe and show the concrete intake plan before asking for
+confirmation of uploads or Huntflow writes. `add_applicant.py --dry-run` still
+uploads the CV for parsing; it is not an offline preview. Extract CV text locally
+for a plan before upload authorization. `huntflow.js add` has no dry-run flag.
+After a partial failure, read the state and identify any created applicant before
+retrying. Never repeat creation blindly.
+
 ## Pick the path first
 
 | Situation | Command |
@@ -78,7 +87,7 @@ Defaults that are already correct — do not pass them explicitly:
 ## Step 2b: add with a CV
 
 ```bash
-python3 ~/.claude/utils/add_applicant.py --cv <path.pdf> --vacancy-id <vid> --status-id <sid>
+python3 ~/.claude/utils/add_applicant.py --cv <path.pdf> --vacancy-id <vid> --status-id <sid> --no-link-files
 ```
 
 For a LinkedIn candidate the CV should be LinkedIn's own **Save to PDF** export
@@ -134,12 +143,13 @@ It works with three roles, resolved from `huntflow.js statuses`:
 
 Default flow, used when the local notes file does not describe another:
 
-- **Never move intake → reject directly.** The sequence is always
-  intake → contacted → reject, for real vacancies and for any "parking" pool.
-- **Never move anyone to reject on your own initiative.** Stop at contacted and
-  leave them there. Contacted means "the decline has been written to them", so
-  the reject step waits until the recruiter has actually sent it, including when
-  they say "reject them". Ask.
+- Use intake, then contacted, then reject unless the recruiter confirms an
+  exception to the team flow.
+- A draft is not contact. Move to contacted only with evidence that a message
+  was actually sent and with confirmation of the stage update.
+- Never reject on your own initiative. If team rules require a sent decline
+  and the recruiter's go-ahead, verify both before the rejection move. Ask for
+  any missing decision or rejection reason.
 
 A team with a different flow (no contacted stage, or a different order) says so in
 the local notes file, which wins over this default.

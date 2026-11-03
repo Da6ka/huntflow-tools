@@ -1,0 +1,4 @@
+interface:
+  display_name: "Huntflow Candidate Intake"
+  short_description: "Add candidates with dedupe and read-back checks"
+  default_prompt: "Use $huntflow-add to check this candidate for duplicates and prepare their Huntflow intake."

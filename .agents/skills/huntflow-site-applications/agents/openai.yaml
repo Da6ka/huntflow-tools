@@ -1,0 +1,4 @@
+interface:
+  display_name: "Huntflow Website Applications"
+  short_description: "Process website applications received through Gmail"
+  default_prompt: "Use $huntflow-site-applications to review website applications and prepare their Huntflow intake."

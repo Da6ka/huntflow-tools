@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Da6ka/huntflow-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/Da6ka/huntflow-tools/actions/workflows/ci.yml) [![Release](https://img.shields.io/badge/release-v1.9.0-blue)](https://github.com/Da6ka/huntflow-tools/releases/latest)
 
-Run your [Huntflow](https://huntflow.ru) recruiting day from the terminal instead of clicking through the web app. Pull up a vacancy's pipeline, check where a candidate stands, move someone forward or reject them with a reason, add a candidate straight from their CV. Type the commands yourself, or ask Claude to do it for you in plain language.
+Run your [Huntflow](https://huntflow.ru) recruiting day from the terminal instead of clicking through the web app. Pull up a vacancy's pipeline, check where a candidate stands, move someone forward or reject them with a reason, add a candidate straight from their CV. Type the commands yourself, or ask Claude Code or Codex to run the included skills in plain language.
 
 This is an unofficial, personal project. It is not made by or affiliated with Huntflow.
 
@@ -17,7 +17,7 @@ This is an unofficial, personal project. It is not made by or affiliated with Hu
 - **Add a candidate without a CV.** Name, vacancy and a few links are enough, for example for a profile you found on LinkedIn.
 - **Attach a CV to someone already in your pipeline.** The public API only lets you add a resume when a candidate is first created. An advanced tool adds one to a record that already exists.
 - **Reorder your pipeline stages.** In the web UI that's drag-and-drop only. An advanced tool does it in one command.
-- **Take in website applications.** A Claude Code skill reads application emails from your company inbox, checks each person against Huntflow by email, phone and surname, adds the new ones with CV, source and tag, and lists who is already in Huntflow but never got a reply. It was built around one team's form email, so you tell it your form's sender and subject first.
+- **Take in website applications.** A skill for Claude Code and Codex reads application emails from your company inbox, checks each person against Huntflow by email, phone and surname, adds the new ones with CV, source and tag, and lists who is already in Huntflow but never got a reply. It was built around one team's form email, so you tell it your form's sender and subject first.
 
 ## Quick start
 
@@ -64,16 +64,20 @@ node huntflow.js me
 
 Optional: `bash smoke_test.sh` runs the full self-check. It only reads data and changes nothing in Huntflow. If the live checks fail with an invalid-token message, redo step 2.
 
-## Using it with Claude
+## Using it with Claude Code and Codex
 
-If you use [Claude Code](https://claude.com/claude-code), you can skip the commands and say what you want:
+Both [Claude Code](https://claude.com/claude-code) and [Codex](https://developers.openai.com/codex/skills/) have dedicated versions of the two intake skills. They call the same CLI tools and use the same Huntflow credentials. After installation, ask in plain language:
 
 - "Show me the pipeline for the backend vacancy."
 - "Move Ivan to the interview stage."
 - "Add these two LinkedIn profiles to Huntflow for the data engineer role."
 - "Reject this candidate, the reason is mismatched qualification."
 
-Claude runs the tools for you and shows what it did. Writes to Huntflow can be previewed with `--dry-run` first.
+The skills check for duplicates, prepare a concrete plan and ask for confirmation before uploads or Huntflow writes. Emails remain unsent Gmail drafts. A draft does not count as contact or justify a move to Contacted.
+
+Dry-run support varies by command: `huntflow.js add` has none, and `add_applicant.py --dry-run` still uploads the CV for parsing before it prints a preview. Confirm the upload first.
+
+### Claude Code installation
 
 **One-time connection.** This assumes you cloned the repo to `~/huntflow-tools`. Symlink the tools and the skills, so a `git pull` here updates what Claude runs:
 
@@ -89,17 +93,49 @@ done
 
 Keep `HUNTFLOW_ACCOUNT_ID` in your shell profile (step 4 above). Inside this repo's folder Claude Code loads the skills without any symlinks.
 
+### Codex installation
+
+Codex skills live in [`.agents/skills`](.agents/skills), with UI metadata in each skill's `agents/openai.yaml`. Codex discovers them when working inside this repository. For use in other projects, symlink them into `~/.agents/skills` (the user skill directory in the [official documentation](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)):
+
+```bash
+mkdir -p ~/.codex/utils ~/.agents/skills
+for f in huntflow.js add_applicant.py add_resume.js reorder_stages.js; do
+  destination="$HOME/.codex/utils/$f"
+  if [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
+    ln -s "$HOME/huntflow-tools/$f" "$destination"
+  fi
+done
+for s in huntflow-add huntflow-site-applications; do
+  destination="$HOME/.agents/skills/$s"
+  if [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
+    ln -s "$HOME/huntflow-tools/.agents/skills/$s" "$destination"
+  fi
+done
+```
+
+These commands assume the checkout is `~/huntflow-tools`. Existing destination paths are left in place: inspect them before replacing an older copy, and keep one installed version of each skill per runtime to avoid duplicate entries. Helper symlinks and skill symlinks follow future updates to this checkout.
+
+Keep `HUNTFLOW_ACCOUNT_ID` available to Codex's terminal environment. You can reuse the Keychain or `~/.huntflow/tokens.json` already configured for Claude Code; switching agents does not require a new token pair. The Node helper also accepts token environment variables; `add_applicant.py` requires Keychain or the token file. Claude's remote session hook is not a Codex hook.
+
+Check the connection without changing candidates:
+
+```bash
+node ~/.codex/utils/huntflow.js me --json
+```
+
+Invoke `$huntflow-add` for a profile or CV, or `$huntflow-site-applications` for application emails. The latter needs a Gmail connector for the correct mailbox. It tries supported attachment tools first and uses an authorized browser download when the connector cannot provide a usable original. Provider file URIs must be transferred to a local file before the CLI can upload them. Codex skills also respect its execution sandbox and approval settings.
+
 ### The `huntflow-add` skill
 
 Adds candidates from any source: a LinkedIn profile, a spreadsheet row, a shortlist, a CV file. It checks whether the person is already in Huntflow, creates the record, attaches the CV, sets tag and source, links the candidate to the vacancy at the right stage, and reads everything back to confirm it saved. It also drafts, but never sends, rejection and invitation emails.
 
-It finds your stages by role, not by name, so custom or non-English stage names work: the first stage is where candidates land, the reject stage is the one Huntflow marks as trash, and the "contacted" stage comes from your notes file (or it asks). Its default flow is intake, then contacted, then reject, never straight from intake to reject, and it never rejects anyone on its own, it asks you first. If your team works differently, say so in your [own notes file](#your-own-notes-for-claude). The details of what the Huntflow API silently ignores are in the skill's `SKILL.md`.
+It finds your stages by role, not by name, so custom or non-English stage names work: the first stage is where candidates land, the reject stage is the one Huntflow marks as trash, and the "contacted" stage comes from your notes file (or it asks). Its default flow is intake, then contacted, then reject, with any exception confirmed by the recruiter. A contacted stage needs evidence of an actual message, not a saved draft; rejection waits for the team's required confirmation. If your team works differently, say so in your [own notes file](#your-own-account-notes). The details of what the Huntflow API silently ignores are in the skill's `SKILL.md`.
 
 ### The `huntflow-site-applications` skill
 
 Loads job applications that arrive by email from a form on your website. It takes the letters from the last 30 days from your Gmail inbox, checks each person against Huntflow, downloads the CV, adds the new ones with source, tag and vacancy, marks the emails as read, and reports who is already in Huntflow but never got a reply.
 
-It was built around one team's form email, so expect to adapt it. At the start it asks for your form's sender and subject (or reads them from your notes file). It needs a Gmail connector for the mailbox that receives the form emails and browser control for downloading attachments.
+It was built around one team's form email, so expect to adapt it. At the start it asks for your form's sender and subject (or reads them from your notes file). It needs a Gmail connector for the mailbox that receives the form emails. Use supported attachment tools when available; otherwise an authorized browser download is needed to obtain the original CV. Label changes also require confirmation.
 
 ## Commands
 
@@ -208,9 +244,9 @@ The script does three things:
 | `--money TEXT` | No | Salary expectation string. |
 | `--linkedin URL` / `--github URL` | No | Questionary fields. |
 | `--telegram HANDLE` | No | `name`, `@name` or a `t.me` link; stored in the applicant's social list. A handle with a space or under 5 characters is refused. |
-| `--dry-run` | No | Parse the CV and print the body, don't POST. |
+| `--dry-run` | No | Upload and parse the CV, then print the applicant body without creating or linking a candidate. |
 
-Huntflow's CV parser sometimes gets a phone or email wrong. Run with `--dry-run` first and check what it would send:
+Huntflow's CV parser sometimes gets a phone or email wrong. After authorizing the upload, run with `--dry-run` and check the proposed applicant body. This still sends the CV to Huntflow:
 
 ```bash
 python3 add_applicant.py --cv cv.pdf --vacancy-id 100001 --status-id 200001 --dry-run
@@ -232,9 +268,9 @@ Everything above works with the defaults. This part is for tuning and for the tw
 | `HUNTFLOW_WEB_COOKIE` | `reorder_stages.js`, `add_resume.js` | Browser session cookie, see below |
 | `HUNTFLOW_XSRF` | `reorder_stages.js`, `add_resume.js` | CSRF token override. Defaults to the `_xsrf` value in the cookie |
 
-### Your own notes for Claude
+### Your own account notes
 
-Tag, source, status and vacancy IDs are different in every Huntflow account, so the skills carry none. If you create `~/.claude/huntflow-local.md`, the skills read it first and treat it as your account notes. It stays on your machine, outside the repo. Put in whatever is specific to you:
+Tag, source, status and vacancy IDs are different in every Huntflow account, so the skills carry none. Claude Code reads `~/.claude/huntflow-local.md`. Codex reads `~/.codex/huntflow-local.md` first and falls back to the Claude file when the Codex file is absent. It stays on your machine, outside the repo. Put in whatever is specific to you:
 
 ```
 # My Huntflow notes
@@ -245,9 +281,9 @@ Tag, source, status and vacancy IDs are different in every Huntflow account, so 
 - Our team writes in another language: use "<our label for application date>:" and "<our label for cover letter>:" in comments.
 ```
 
-### Tell Claude where the tools are (optional)
+### Tell your agent where the tools are (optional)
 
-If you want Claude to know the tools in every session, add a short block to your `~/.claude/CLAUDE.md`:
+For Claude Code, you can add a short block to your `~/.claude/CLAUDE.md`. For Codex, put the equivalent in your user `~/.codex/AGENTS.md`, using `~/.codex/utils/` for the helper paths:
 
 ```
 ### Huntflow ATS
@@ -324,7 +360,7 @@ node add_resume.js 500001 cv.pdf --keep-temp
 
 The Huntflow API uses short-lived access tokens (about 5 minutes) and long-lived refresh tokens (about 14 days). The tools:
 
-1. Read the access token from the macOS Keychain, then `~/.huntflow/tokens.json`, then the `HUNTFLOW_ACCESS_TOKEN` env var (the refresh token likewise).
+1. Read the access token from the macOS Keychain, then `~/.huntflow/tokens.json`. `huntflow.js` also falls back to the `HUNTFLOW_ACCESS_TOKEN` env var (the refresh token likewise); `add_applicant.py` does not have that environment fallback.
 2. On a 401, call `POST /token/refresh` with the refresh token.
 3. Save the new pair back to the same place.
 
