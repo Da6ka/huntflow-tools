@@ -4,7 +4,7 @@ description: Use when processing applications received by email from a company w
 license: MIT
 metadata:
   author: Da6ka
-  version: "1.9.0"
+  version: "1.10.0"
   adapted-for: "Codex"
   source: "https://github.com/Da6ka/huntflow-tools"
 ---

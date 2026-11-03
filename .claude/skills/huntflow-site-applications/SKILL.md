@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires a terminal, ~/.claude/utils/add_applicant.py and huntflow.js, Huntflow credentials, a Gmail connector for the form mailbox, and a way to save the original CV locally (connector transfer or authorized browser download).
 metadata:
   author: Da6ka
-  version: "1.9.0"
+  version: "1.10.0"
 ---
 
 # huntflow-site-applications
