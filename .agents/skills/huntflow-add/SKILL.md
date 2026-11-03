@@ -4,7 +4,7 @@ description: Use when adding candidates to Huntflow from profiles, a shortlist o
 license: MIT
 metadata:
   author: Da6ka
-  version: "1.9.0"
+  version: "1.10.0"
   adapted-for: "Codex"
   source: "https://github.com/Da6ka/huntflow-tools"
 ---

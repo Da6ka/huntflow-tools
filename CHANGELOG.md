@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v1.10.0 - 2026-11-03
+
 ### Added
 
 - Codex versions of `huntflow-add` and `huntflow-site-applications` in `.agents/skills`, with UI metadata, existing CLI authentication and account-note fallback.
